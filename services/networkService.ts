@@ -134,3 +134,20 @@ export const generateNetwork = (testCase: TestCase): RawGraphData => {
     
     return graph;
 };
+
+export const generateRandomTestCase = (): TestCase => {
+    const avg_nodes = Math.floor(Math.random() * 26) + 5; // 5 to 30
+    const max_depth = Math.floor(Math.random() * 5) + 2; // 2 to 6
+    const risk_prob = parseFloat((Math.random() * (0.7 - 0.05) + 0.05).toFixed(2));
+    const circular_prob = parseFloat(Math.random().toFixed(2));
+    const client_id = fakeCompanyName();
+
+    return {
+        client_id,
+        avg_nodes,
+        max_depth,
+        risk_prob,
+        circular_prob,
+        title: `Random Test (${avg_nodes} nodes, depth ${max_depth}, risk ${risk_prob})`
+    };
+};

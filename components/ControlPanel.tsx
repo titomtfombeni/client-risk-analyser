@@ -11,6 +11,8 @@ interface ControlPanelProps {
     clientNode: AnalyzedNodeData | null;
     aiExplanation: string;
     isLoading: boolean;
+    onAnalyzeSelected: () => void;
+    onAnalyzeRandom: () => void;
 }
 
 const AILoader: React.FC = () => (
@@ -23,7 +25,15 @@ const AILoader: React.FC = () => (
 );
 
 
-export const ControlPanel: React.FC<ControlPanelProps> = ({ selectedCase, onCaseChange, clientNode, aiExplanation, isLoading }) => {
+export const ControlPanel: React.FC<ControlPanelProps> = ({ 
+    selectedCase, 
+    onCaseChange, 
+    clientNode, 
+    aiExplanation, 
+    isLoading,
+    onAnalyzeSelected,
+    onAnalyzeRandom
+ }) => {
     
     const riskCategory = clientNode ? getRiskCategory(clientNode.final_risk_score) : 'Low';
     const riskClass = RISK_LEVELS[riskCategory]?.class || 'bg-gray-200';
@@ -45,6 +55,25 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({ selectedCase, onCase
                         <option key={key} value={key}>{value.title}</option>
                     ))}
                 </select>
+            </div>
+
+            <div className="flex space-x-2">
+                <button
+                    onClick={onAnalyzeSelected}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50 transition-colors"
+                    aria-label="Analyze the selected scenario from the dropdown"
+                >
+                    Analyze Selected
+                </button>
+                <button
+                    onClick={onAnalyzeRandom}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50 transition-colors"
+                    aria-label="Analyze a new, randomly generated scenario"
+                >
+                    Analyze Random
+                </button>
             </div>
 
             {clientNode && (

@@ -4,14 +4,14 @@ import { ControlPanel } from './components/ControlPanel';
 import { GraphVisualization } from './components/GraphVisualization';
 import { DataTable } from './components/DataTable';
 import { OrgChartVisualization } from './components/OrgChartVisualization';
-import { generateNetwork } from './services/networkService';
+import { generateNetwork, generateRandomTestCase } from './services/networkService';
 import { analyzeClientRisk } from './services/riskService';
 import { getRiskExplanation } from './services/geminiService';
 import type { GraphData, TestCase, AnalyzedNodeData } from './types';
 import { TEST_CASES } from './constants';
 
 const App: React.FC = () => {
-    const [selectedCase, setSelectedCase] = useState<string>('bravo');
+    const [selectedCase, setSelectedCase] = useState<string>('alpha');
     const [graphData, setGraphData] = useState<GraphData | null>(null);
     const [clientNode, setClientNode] = useState<AnalyzedNodeData | null>(null);
     const [aiExplanation, setAiExplanation] = useState<string>('');
@@ -23,6 +23,8 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setAiExplanation('');
+        // This brief timeout allows the UI to update to the loading state before the heavy processing begins.
+        await new Promise(resolve => setTimeout(resolve, 50)); 
         try {
             const rawGraph = generateNetwork(testCase);
             const analyzedGraph = analyzeClientRisk(rawGraph, testCase.client_id);
@@ -42,6 +44,10 @@ const App: React.FC = () => {
                 } else {
                     setAiExplanation("The client has a low risk score, so no detailed AI explanation is necessary. All associated entities are in good standing.");
                 }
+            } else {
+                 setClientNode(null);
+                 setGraphData(null);
+                 setError(`Client ID "${testCase.client_id}" not found in the generated graph.`);
             }
         } catch (e) {
             console.error("Failed to run analysis:", e);
@@ -56,7 +62,21 @@ const App: React.FC = () => {
         if (currentCase) {
             runAnalysis(currentCase);
         }
-    }, [selectedCase, runAnalysis]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleAnalyzeSelected = useCallback(() => {
+        const currentCase = TEST_CASES[selectedCase];
+        if (currentCase) {
+            runAnalysis(currentCase);
+        }
+    }, [runAnalysis, selectedCase]);
+
+    const handleAnalyzeRandom = useCallback(() => {
+        const randomCase = generateRandomTestCase();
+        // We don't change the selectedCase in the dropdown for random runs
+        runAnalysis(randomCase);
+    }, [runAnalysis]);
     
     const ViewToggle = () => (
         <div className="absolute top-4 right-4 z-10 bg-white p-1 rounded-md shadow-md flex space-x-1">
@@ -114,6 +134,8 @@ const App: React.FC = () => {
                         clientNode={clientNode}
                         aiExplanation={aiExplanation}
                         isLoading={isLoading}
+                        onAnalyzeSelected={handleAnalyzeSelected}
+                        onAnalyzeRandom={handleAnalyzeRandom}
                     />
                 </div>
                 <div className="flex-1 h-1/2 md:h-full bg-gray-50 relative">
@@ -128,8 +150,8 @@ const App: React.FC = () => {
                             </div>
                         </div>
                     ) : error ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <p className="text-red-500">{error}</p>
+                        <div className="absolute inset-0 flex items-center justify-center p-4">
+                            <p className="text-red-500 bg-red-100 border border-red-400 rounded-md p-4 text-center">{error}</p>
                         </div>
                     ) : (
                         <>
