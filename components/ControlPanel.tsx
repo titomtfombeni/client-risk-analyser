@@ -11,8 +11,10 @@ interface ControlPanelProps {
     clientNode: AnalyzedNodeData | null;
     aiExplanation: string;
     isLoading: boolean;
+    isExporting: boolean;
     onAnalyzeSelected: () => void;
     onAnalyzeRandom: () => void;
+    onExportReport: () => void;
 }
 
 const AILoader: React.FC = () => (
@@ -31,12 +33,15 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     clientNode, 
     aiExplanation, 
     isLoading,
+    isExporting,
     onAnalyzeSelected,
-    onAnalyzeRandom
+    onAnalyzeRandom,
+    onExportReport
  }) => {
     
     const riskCategory = clientNode ? getRiskCategory(clientNode.final_risk_score) : 'Low';
     const riskClass = RISK_LEVELS[riskCategory]?.class || 'bg-gray-200';
+    const canExport = !!clientNode;
 
     return (
         <div className="p-2 space-y-6">
@@ -48,7 +53,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                     id="test-case-select"
                     value={selectedCase}
                     onChange={(e) => onCaseChange(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || isExporting}
                     className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-brand-primary focus:border-brand-primary sm:text-sm rounded-md shadow-sm disabled:opacity-50"
                 >
                     {Object.entries(TEST_CASES).map(([key, value]) => (
@@ -60,7 +65,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             <div className="flex space-x-2">
                 <button
                     onClick={onAnalyzeSelected}
-                    disabled={isLoading}
+                    disabled={isLoading || isExporting}
                     className="flex-1 px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md shadow-sm hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-50 transition-colors"
                     aria-label="Analyze the selected scenario from the dropdown"
                 >
@@ -68,13 +73,22 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </button>
                 <button
                     onClick={onAnalyzeRandom}
-                    disabled={isLoading}
+                    disabled={isLoading || isExporting}
                     className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-600 disabled:opacity-50 transition-colors"
                     aria-label="Analyze a new, randomly generated scenario"
                 >
                     Analyze Random
                 </button>
             </div>
+            
+            <button
+                onClick={onExportReport}
+                disabled={isLoading || isExporting || !canExport}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Export the full analysis report as a PDF document"
+            >
+                {isExporting ? 'Exporting...' : 'Export Full Report (PDF)'}
+            </button>
 
             {clientNode && (
                 <Card>

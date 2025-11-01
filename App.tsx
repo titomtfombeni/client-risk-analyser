@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { GraphVisualization } from './components/GraphVisualization';
 import { DataTable } from './components/DataTable';
@@ -7,6 +7,7 @@ import { OrgChartVisualization } from './components/OrgChartVisualization';
 import { generateNetwork, generateRandomTestCase } from './services/networkService';
 import { analyzeClientRisk } from './services/riskService';
 import { getRiskExplanation } from './services/geminiService';
+import { generatePdfReport } from './services/reportService';
 import type { GraphData, TestCase, AnalyzedNodeData } from './types';
 import { TEST_CASES } from './constants';
 
@@ -16,8 +17,10 @@ const App: React.FC = () => {
     const [clientNode, setClientNode] = useState<AnalyzedNodeData | null>(null);
     const [aiExplanation, setAiExplanation] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isExporting, setIsExporting] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'graph' | 'table' | 'orgchart'>('graph');
+    const visualizationContainerRef = useRef<HTMLDivElement>(null);
 
     const runAnalysis = useCallback(async (testCase: TestCase) => {
         setIsLoading(true);
@@ -77,6 +80,26 @@ const App: React.FC = () => {
         // We don't change the selectedCase in the dropdown for random runs
         runAnalysis(randomCase);
     }, [runAnalysis]);
+
+    const handleExportPdf = useCallback(async () => {
+        if (!clientNode || !graphData || isExporting) return;
+
+        setIsExporting(true);
+        try {
+            await generatePdfReport(
+                clientNode,
+                graphData,
+                aiExplanation,
+                visualizationContainerRef.current,
+                viewMode
+            );
+        } catch (e) {
+            console.error("Failed to generate PDF report:", e);
+            setError("Could not generate the PDF report. See console for details.");
+        } finally {
+            setIsExporting(false);
+        }
+    }, [clientNode, graphData, aiExplanation, viewMode, isExporting]);
     
     const ViewToggle = () => (
         <div className="absolute top-4 right-4 z-10 bg-white p-1 rounded-md shadow-md flex space-x-1">
@@ -134,11 +157,13 @@ const App: React.FC = () => {
                         clientNode={clientNode}
                         aiExplanation={aiExplanation}
                         isLoading={isLoading}
+                        isExporting={isExporting}
                         onAnalyzeSelected={handleAnalyzeSelected}
                         onAnalyzeRandom={handleAnalyzeRandom}
+                        onExportReport={handleExportPdf}
                     />
                 </div>
-                <div className="flex-1 h-1/2 md:h-full bg-gray-50 relative">
+                <div ref={visualizationContainerRef} className="flex-1 h-1/2 md:h-full bg-gray-50 relative">
                     {isLoading ? (
                          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 bg-opacity-75 z-20">
                             <div className="flex flex-col items-center">
