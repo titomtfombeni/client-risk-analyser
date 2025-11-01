@@ -1,0 +1,5 @@
+{
+  "name": "Client Risk Network Analyzer",
+  "description": "An application to analyze and visualize the risk associated with clients in complex ownership and management structures, providing a risk rating, graphical representation, and an AI-powered explanation.",
+  "requestFramePermissions": []
+}
